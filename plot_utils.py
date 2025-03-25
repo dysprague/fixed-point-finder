@@ -19,6 +19,7 @@ def plot_fps(fps,
     plot_start_time=0,
     plot_stop_time=None,
     mode_scale=0.25,
+    plot_2d = True,
     fig=None):
 
     '''Plots a visualization and analysis of the unique fixed points.
@@ -98,7 +99,22 @@ def plot_fps(fps,
     n_inits = fps.n
     n_states = fps.n_states
 
-    if n_states >= 3:
+    if n_states >=2 and plot_2d:
+        pca = PCA(n_components=2)
+
+        if state_traj is not None:
+            state_traj_btxd = np.reshape(state_traj_bxtxd,
+                (n_batch*n_time, n_states))
+            pca.fit(state_traj_btxd)
+        else:
+            pca.fit(fps.xstar)
+
+        ax = fig.add_subplot(111)
+        ax.set_xlabel('PC 1', fontweight=FONT_WEIGHT)
+        ax.set_ylabel('PC 2', fontweight=FONT_WEIGHT)
+    
+
+    elif n_states >= 3:
         pca = PCA(n_components=3)
 
         if state_traj is not None:
@@ -114,9 +130,9 @@ def plot_fps(fps,
         ax.set_ylabel('PC 2', fontweight=FONT_WEIGHT)
 
         # For generating figure in paper.md
-        ax.set_xticks([-2, -1, 0, 1, 2])
-        ax.set_yticks([-1, 0, 1])
-        ax.set_zticks([-1, 0, 1])
+        #ax.set_xticks([-2, -1, 0, 1, 2])
+        #ax.set_yticks([-1, 0, 1])
+        #ax.set_zticks([-1, 0, 1])
     else:
         # For 1D or 0D networks (i.e., never)
         pca = None
@@ -125,25 +141,50 @@ def plot_fps(fps,
         if n_states == 2:
             ax.ylabel('Hidden 2', fontweight=FONT_WEIGHT)
 
-    if state_traj is not None:
-        if plot_batch_idx is None:
-            plot_batch_idx = list(range(n_batch))
+    print(pca.explained_variance_ratio_)
 
-        for batch_idx in plot_batch_idx:
-            x_idx = state_traj_bxtxd[batch_idx]
+    if plot_2d:
+        if state_traj is not None:
+            if plot_batch_idx is None:
+                plot_batch_idx = list(range(n_batch))
 
-            if n_states >= 3:
-                z_idx = pca.transform(x_idx[plot_time_idx, :])
-            else:
-                z_idx = x_idx[plot_time_idx, :]
-            plot_123d(ax, z_idx, color='b', linewidth=0.2)
+            for batch_idx in plot_batch_idx:
+                x_idx = state_traj_bxtxd[batch_idx]
 
-    for init_idx in range(n_inits):
-        plot_fixed_point(
-            ax,
-            fps[init_idx],
-            pca,
-            scale=mode_scale)
+                if n_states >= 2:
+                    z_idx = pca.transform(x_idx[plot_time_idx, :])
+                else:
+                    z_idx = x_idx[plot_time_idx, :]
+                plot_123d(ax, z_idx, color='b', linewidth=0.2)
+
+            for init_idx in range(n_inits):
+                plot_fixed_point(
+                    ax,
+                    fps[init_idx],
+                    pca,
+                    scale=mode_scale)
+          
+    else:
+
+        if state_traj is not None:
+            if plot_batch_idx is None:
+                plot_batch_idx = list(range(n_batch))
+
+            for batch_idx in plot_batch_idx:
+                x_idx = state_traj_bxtxd[batch_idx]
+
+                if n_states >= 3:
+                    z_idx = pca.transform(x_idx[plot_time_idx, :])
+                else:
+                    z_idx = x_idx[plot_time_idx, :]
+                plot_123d(ax, z_idx, color='b', linewidth=0.2)
+
+        for init_idx in range(n_inits):
+            plot_fixed_point(
+                ax,
+                fps[init_idx],
+                pca,
+                scale=mode_scale)
 
     plt.ion()
     plt.show()

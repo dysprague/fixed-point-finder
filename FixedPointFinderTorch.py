@@ -56,7 +56,8 @@ class FixedPointFinderTorch(FixedPointFinderBase):
             See FixedPointFinderBase.py for additional keyword arguments.
         '''
         self.rnn = rnn
-        self.device = next(rnn.parameters()).device
+        #self.device = next(rnn.parameters()).device
+        self.device = 'cpu'
 
         self.lr_init = lr_init
         self.lr_patience = lr_patience
@@ -123,9 +124,9 @@ class FixedPointFinderTorch(FixedPointFinderBase):
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer, 
             mode='min',
-            factor=.95,
-            patience=2,
-            cooldown=0)
+            factor=self.lr_factor,
+            patience=self.lr_patience, #originall set to 2, now defaults to 5
+            cooldown=self.lr_cooldown)
 
         iter_count = 1
         iter_learning_rate = init_lr
@@ -152,6 +153,9 @@ class FixedPointFinderTorch(FixedPointFinderBase):
             ev_q_scalar = q_scalar.detach().cpu().numpy()
             ev_q_b = q_b.detach().cpu().numpy()
             ev_dq_b = dq_b.detach().cpu().numpy()
+
+            if iter_count % 25 ==0:
+                print(f'Currently on iteration {iter_count}')
 
             if self.super_verbose and \
                 np.mod(iter_count, self.n_iters_per_print_update)==0:

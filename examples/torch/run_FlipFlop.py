@@ -109,6 +109,9 @@ def find_fixed_points(model, valid_predictions):
 
 	# Study the system in the absence of input pulses (e.g., all inputs are 0)
 	inputs = np.zeros([1, n_bits])
+	print(initial_states.shape)
+	print(inputs.shape)
+
 
 	# Run the fixed point finder
 	unique_fps, all_fps = fpf.find_fixed_points(initial_states, inputs)
